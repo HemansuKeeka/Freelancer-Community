@@ -8,7 +8,8 @@ CREATE TABLE members (
   freelance_topic TEXT,
   bio TEXT,
   avatar_url TEXT DEFAULT 'https://i.pravatar.cc/150?u=' || gen_random_uuid(),
-  is_online BOOLEAN DEFAULT true
+  is_online BOOLEAN DEFAULT true,
+  is_open_to_work BOOLEAN DEFAULT true
 );
 
 -- CREATE MESSAGES TABLE
@@ -28,4 +29,5 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public profiles are viewable by everyone" ON members FOR SELECT USING (true);
 CREATE POLICY "Anyone can join" ON members FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can send messages" ON messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can update their own status" ON members FOR UPDATE USING (true); -- Broad for prototype
 CREATE POLICY "Recipient can view their messages" ON messages FOR SELECT USING (true);

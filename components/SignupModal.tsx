@@ -35,7 +35,8 @@ const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSuccess })
           email: formData.email,
           background: formData.background,
           freelance_topic: formData.freelanceTopic,
-          bio: formData.bio
+          bio: formData.bio,
+          is_open_to_work: true // Initializing status
         }]);
 
       if (dbError) throw dbError;

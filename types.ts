@@ -8,6 +8,7 @@ export interface Member {
   bio: string;
   avatar: string;
   isOnline: boolean;
+  isOpenToWork: boolean;
 }
 
 export interface Feature {

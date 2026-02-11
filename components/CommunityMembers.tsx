@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Search, Globe, Star, Loader2, Send } from 'lucide-react';
+import { MessageSquare, Search, Globe, Star, Loader2, Send, Briefcase, CheckCircle2, XCircle } from 'lucide-react';
 import { Member } from '../types.ts';
 import { supabase } from '../supabaseClient.ts';
 
@@ -14,39 +14,72 @@ const CommunityMembers: React.FC<CommunityMembersProps> = ({ userEmail }) => {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Find current user's record from the list
+  const currentUserRecord = members.find(m => {
+    // Note: In this simple prototype, we don't store the email in the local Member type 
+    // but the Supabase fetch can be adjusted to include it if needed for more robust matching.
+    // For now, we'll assume we can match based on the fetch.
+    return false; // placeholder for more complex auth
+  });
+
+  const fetchMembers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching members:', error);
+      } else if (data) {
+        const mapped: Member[] = data.map(m => ({
+          id: m.id,
+          name: m.name,
+          role: m.freelance_topic,
+          background: m.background,
+          bio: m.bio,
+          avatar: m.avatar_url,
+          isOnline: m.is_online,
+          isOpenToWork: m.is_open_to_work ?? true, // Fallback to true if null
+          email: m.email // Temporarily adding for matching logic
+        }));
+        setMembers(mapped);
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('members')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching members:', error);
-        } else if (data) {
-          const mapped: Member[] = data.map(m => ({
-            id: m.id,
-            name: m.name,
-            role: m.freelance_topic,
-            background: m.background,
-            bio: m.bio,
-            avatar: m.avatar_url,
-            isOnline: m.is_online
-          }));
-          setMembers(mapped);
-        }
-      } catch (err) {
-        console.error('Fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMembers();
   }, []);
+
+  const handleToggleWorkStatus = async (memberId: string, currentStatus: boolean) => {
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({ is_open_to_work: !currentStatus })
+        .eq('id', memberId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setMembers(prev => prev.map(m => 
+        m.id === memberId ? { ...m, isOpenToWork: !currentStatus } : m
+      ));
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Failed to update status.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleSendMessage = async (recipientId: string, memberName: string) => {
     if (!messageContent.trim()) return;
@@ -80,9 +113,52 @@ const CommunityMembers: React.FC<CommunityMembersProps> = ({ userEmail }) => {
     m.background.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Find the specific member object for the logged in user
+  // (We use a cast here because we added email to the map inside fetchMembers for internal logic)
+  const myProfile = members.find((m: any) => m.email === userEmail);
+
   return (
     <div className="pt-32 pb-20 min-h-screen bg-[#0B0D0F]">
       <div className="container mx-auto px-6">
+        
+        {/* User Status Management Bar */}
+        {myProfile && (
+          <div className="mb-10 animate-in slide-in-from-top duration-500">
+            <div className="glass-card p-6 rounded-3xl border border-brand-teal/20 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl overflow-hidden border border-brand-teal/30 p-0.5">
+                  <img src={myProfile.avatar} alt="Me" className="w-full h-full object-cover rounded-xl" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white">Welcome back, {myProfile.name.split(' ')[0]}</h4>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Manage your visibility</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 bg-black/40 px-6 py-3 rounded-2xl border border-gray-800">
+                <div className="flex items-center gap-3">
+                   <div className={`p-2 rounded-lg ${myProfile.isOpenToWork ? 'bg-brand-teal/10 text-brand-teal' : 'bg-gray-800 text-gray-500'}`}>
+                      <Briefcase size={18} />
+                   </div>
+                   <span className={`text-sm font-bold ${myProfile.isOpenToWork ? 'text-white' : 'text-gray-500'}`}>
+                     {myProfile.isOpenToWork ? 'Available for new projects' : 'Currently Unavailable'}
+                   </span>
+                </div>
+                
+                <button 
+                  disabled={updatingStatus}
+                  onClick={() => handleToggleWorkStatus(myProfile.id, myProfile.isOpenToWork)}
+                  className={`relative w-14 h-7 rounded-full transition-all duration-300 ${myProfile.isOpenToWork ? 'bg-brand-teal' : 'bg-gray-700'}`}
+                >
+                   <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 shadow-lg flex items-center justify-center ${myProfile.isOpenToWork ? 'translate-x-7' : 'translate-x-0'}`}>
+                      {updatingStatus ? <Loader2 size={12} className="animate-spin text-gray-400" /> : null}
+                   </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 text-left">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Community Collective</h1>
@@ -136,9 +212,18 @@ const CommunityMembers: React.FC<CommunityMembersProps> = ({ userEmail }) => {
                 </p>
 
                 <div className="flex items-center justify-between pt-6 border-t border-gray-800">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Globe size={14} />
-                    <span>Open to work</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    {member.isOpenToWork ? (
+                      <div className="flex items-center gap-2 text-brand-teal">
+                        <CheckCircle2 size={14} />
+                        <span className="font-medium">Open to work</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <XCircle size={14} />
+                        <span className="font-medium italic">Fully booked</span>
+                      </div>
+                    )}
                   </div>
                   <button 
                     onClick={() => setActiveMessageId(member.id)}
