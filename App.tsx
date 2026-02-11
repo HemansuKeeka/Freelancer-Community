@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header.tsx';
 import Hero from './components/Hero.tsx';
 import Features from './components/Features.tsx';
@@ -8,18 +8,35 @@ import GettingStarted from './components/GettingStarted.tsx';
 import Footer from './components/Footer.tsx';
 import SignupModal from './components/SignupModal.tsx';
 import CommunityMembers from './components/CommunityMembers.tsx';
+import SubscriptionModal from './components/SubscriptionModal.tsx';
 
 function App() {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [currentView, setCurrentView] = useState<'home' | 'members'>('home');
+
+  // Check for persistent membership on load/refresh
+  useEffect(() => {
+    const joined = localStorage.getItem('foundry_joined');
+    const email = localStorage.getItem('foundry_email');
+    
+    if (joined === 'true') {
+      setIsMember(true);
+      setUserEmail(email || undefined);
+      // Trigger the subscription pop-up on refresh if they are already a member
+      setIsSubscriptionOpen(true);
+    }
+  }, []);
 
   const toggleSignup = () => setIsSignupOpen(!isSignupOpen);
   
   const handleSignupSuccess = (email: string) => {
     setIsMember(true);
     setUserEmail(email);
+    localStorage.setItem('foundry_joined', 'true');
+    localStorage.setItem('foundry_email', email);
   };
 
   const handleCloseModal = () => {
@@ -64,6 +81,11 @@ function App() {
         isOpen={isSignupOpen} 
         onClose={handleCloseModal}
         onSuccess={handleSignupSuccess}
+      />
+
+      <SubscriptionModal 
+        isOpen={isSubscriptionOpen}
+        onClose={() => setIsSubscriptionOpen(false)}
       />
     </div>
   );
