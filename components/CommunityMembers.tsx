@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Search, Globe, Star, Loader2, Send } from 'lucide-react';
-import { Member } from '../types';
-import { supabase } from '../supabaseClient';
+import { Member } from '../types.ts';
+import { supabase } from '../supabaseClient.ts';
 
 interface CommunityMembersProps {
   userEmail?: string;
@@ -18,26 +18,31 @@ const CommunityMembers: React.FC<CommunityMembersProps> = ({ userEmail }) => {
   useEffect(() => {
     const fetchMembers = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('members')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('members')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching members:', error);
-      } else if (data) {
-        const mapped: Member[] = data.map(m => ({
-          id: m.id,
-          name: m.name,
-          role: m.freelance_topic,
-          background: m.background,
-          bio: m.bio,
-          avatar: m.avatar_url,
-          isOnline: m.is_online
-        }));
-        setMembers(mapped);
+        if (error) {
+          console.error('Error fetching members:', error);
+        } else if (data) {
+          const mapped: Member[] = data.map(m => ({
+            id: m.id,
+            name: m.name,
+            role: m.freelance_topic,
+            background: m.background,
+            bio: m.bio,
+            avatar: m.avatar_url,
+            isOnline: m.is_online
+          }));
+          setMembers(mapped);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchMembers();

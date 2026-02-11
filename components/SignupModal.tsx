@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, Send, Loader2 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient.ts';
 
 interface SignupModalProps {
   isOpen: boolean;

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import DeepDive from './components/DeepDive';
-import Integrations from './components/Integrations';
-import GettingStarted from './components/GettingStarted';
-import Footer from './components/Footer';
-import SignupModal from './components/SignupModal';
-import CommunityMembers from './components/CommunityMembers';
+import Header from './components/Header.tsx';
+import Hero from './components/Hero.tsx';
+import Features from './components/Features.tsx';
+import DeepDive from './components/DeepDive.tsx';
+import Integrations from './components/Integrations.tsx';
+import GettingStarted from './components/GettingStarted.tsx';
+import Footer from './components/Footer.tsx';
+import SignupModal from './components/SignupModal.tsx';
+import CommunityMembers from './components/CommunityMembers.tsx';
 
 function App() {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
